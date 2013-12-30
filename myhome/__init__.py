@@ -5,6 +5,7 @@ import json
 inside_match = re.compile(r'inside: [0-9\.]+')
 outside_match = re.compile(r'outside: [0-9\.]+')
 target_match = re.compile(r'target: [0-9\.]+')
+heatingControl_match = re.compile(r'heatingControl: ".+[A-Z]+"')
 
 class IncorrectUsernameOrPassword(Exception):
 	pass
@@ -21,15 +22,15 @@ class MyHome(object):
 
 	def get(self):
 		html = self.session.get('https://myhome.britishgas.co.uk/myhome2/climate/').text.replace('\n', ' ')
+		# print inside_match.search(html).group()
 		inside_temperature = float(inside_match.search(html).group().split(' ')[-1])
 		outside_temperature = float(outside_match.search(html).group().split(' ')[-1])
 		try:
 			target_temperature = float(target_match.search(html).group().split(' ')[-1])
 		except:
 			target_temperature = 0.0
-		heating_on = 'heatingOn: true' in html
-		print html
-		return {"inside_temperature": inside_temperature, "outside_temperature": outside_temperature, "target_temperature": target_temperature, "heating_on": heating_on}
+		heatingControl = heatingControl_match.search(html).group().split('"')[1]
+		return {"inside_temperature": inside_temperature, "outside_temperature": outside_temperature, "target_temperature": target_temperature, "heatingControl": heatingControl}
 
 	def set_manual(self):
 		self.session.put('https://myhome.britishgas.co.uk/myhome2/climate', data=json.dumps({'heatingControl': "MANUAL"}))
@@ -47,5 +48,4 @@ class MyHome(object):
 
 if __name__ == '__main__':
 	myhome = MyHome(USERNAME, PASSWORD)
-	myhome.set_target(20.0)
 	print myhome.get()
